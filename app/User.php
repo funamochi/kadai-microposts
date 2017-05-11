@@ -97,6 +97,44 @@ class User extends Model implements AuthenticatableContract,
         $follow_user_ids[] = $this->id;
         return Micropost::whereIn('user_id', $follow_user_ids);
     }
-
+    
+    public function favorite_posts()
+    {
+        return $this->belongsToMany(Micropost::class, 'favorites', 'user_id', 'micropost_id')->withTimestamps();
+    }
+    
+    public function add_favorite($micropostId)
+    {
+        // お気に入り確認
+        $exist = $this->is_favorite($micropostId);
+        
+        if ($exist) {
+            // 既にお気に入りに追加されていれば何もしない
+            return false;
+        } else {
+            // 追加されていなければ追加する
+            $this->favorite_posts()->attach($micropostId);
+            return true;
+        }
+    }
+    
+    public function remove_favorite($micropostId)
+    {
+        // お気に入りの確認
+        $exist = $this->is_favorite($micropostId);
+        
+        if ($exist) {
+            // お気に入りにあれば消す
+            $this->favorite_posts()->detach($micropostId);
+            return true;
+        } else {
+            // なければ何もしない
+            return false;
+        }
+    }
+    
+    public function is_favorite($micropostId) {
+        return $this->favorite_posts()->where('micropost_id', $micropostId)->exists();
+    }
     
 }
